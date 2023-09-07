@@ -1,37 +1,36 @@
 import React, { useRef, useState } from 'react';
 import './App.css';
 import { initializeApp } from 'firebase/app';
-import { getAnalytics } from "https://www.gstatic.com/firebasejs/10.3.1/firebase-analytics.js";
-import firebase from 'firebase/compat/app';
-import 'firebase/compat/auth';
-import 'firebase/compat/firestore';
-import 'firebase/analytics';
-
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
+import { getFirestore, collection, query, orderBy, limit, addDoc, serverTimestamp } from 'firebase/firestore';
 import { useAuthState } from 'react-firebase-hooks/auth';
 import { useCollectionData } from 'react-firebase-hooks/firestore';
+// Import the functions you need from the SDKs you need
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
 
-const auth = firebase.auth();
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAIVUJxn2lBo_WzKkdw8B1-3w6eKtK1vRw",
+  authDomain: "fireship-demos-c506e.firebaseapp.com",
+  databaseURL: "https://fireship-demos-c506e-default-rtdb.firebaseio.com",
+  projectId: "fireship-demos-c506e",
+  storageBucket: "fireship-demos-c506e.appspot.com",
+  messagingSenderId: "223381984311",
+  appId: "1:223381984311:web:b1c24c5cb2b44875e4dbb2",
+  measurementId: "G-5FJYRY4M55"
+};
 
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
 
-  const secondaryAppConfig = {
-    apiKey: "AIzaSyAIVUJxn2lBo_WzKkdw8B1-3w6eKtK1vRw",
-    authDomain: "fireship-demos-c506e.firebaseapp.com",
-    projectId: "fireship-demos-c506e",
-    storageBucket: "fireship-demos-c506e.appspot.com",
-    messagingSenderId: "223381984311",
-    appId: "1:223381984311:web:b1c24c5cb2b44875e4dbb2",
-    measurementId: "G-5FJYRY4M55"
-  };
-
-  // Initialize Firebase
-  const secondaryApp = firebase.initializeApp(secondaryAppConfig, 'secondary');
-
-  // Firestore örneği alabilirsiniz
-  const firestore = secondaryApp.firestore();
-
+const auth = getAuth(app);
+const firestore = getFirestore(app);
 
 function App() {
-
   const [user] = useAuthState(auth);
 
   return (
@@ -44,16 +43,14 @@ function App() {
       <section>
         {user ? <ChatRoom /> : <SignIn />}
       </section>
-
     </div>
   );
 }
 
 function SignIn() {
-
   const signInWithGoogle = () => {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider);
+    const provider = new GoogleAuthProvider();
+    signInWithPopup(auth, provider);
   }
 
   return (
@@ -62,74 +59,64 @@ function SignIn() {
       <p>Do not violate the community guidelines or you will be banned for life!</p>
     </>
   )
-
 }
 
 function SignOut() {
   return auth.currentUser && (
-    <button className="sign-out" onClick={() => auth.signOut()}>Sign Out</button>
+    <button className="sign-out" onClick={() => signOut(auth)}>Sign Out</button>
   )
 }
 
-
 function ChatRoom() {
   const dummy = useRef();
-  const messagesRef = firestore.collection('messages');
-  const query = messagesRef.orderBy('createdAt').limit(25);
+  const messagesRef = collection(firestore, 'messages');
+  const q = query(messagesRef, orderBy('createdAt'), limit(25));
 
-  const [messages] = useCollectionData(query, { idField: 'id' });
+  const [messages] = useCollectionData(q, { idField: 'id' });
 
   const [formValue, setFormValue] = useState('');
-
 
   const sendMessage = async (e) => {
     e.preventDefault();
 
     const { uid, photoURL } = auth.currentUser;
 
-    await messagesRef.add({
+    await addDoc(messagesRef, {
       text: formValue,
-      createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+      createdAt: serverTimestamp(),
       uid,
       photoURL
-    })
+    });
 
     setFormValue('');
     dummy.current.scrollIntoView({ behavior: 'smooth' });
   }
 
-  return (<>
-    <main>
-
-      {messages && messages.map(msg => <ChatMessage key={msg.id} message={msg} />)}
-
-      <span ref={dummy}></span>
-
-    </main>
-
-    <form onSubmit={sendMessage}>
-
-      <input value={formValue} onChange={(e) => setFormValue(e.target.value)} placeholder="say something nice" />
-
-      <button type="submit" disabled={!formValue}>🕊️</button>
-
-    </form>
-  </>)
+  return (
+    <>
+      <main>
+        {messages && messages.map(msg => <ChatMessage key={msg.id} message={msg} />)}
+        <span ref={dummy}></span>
+      </main>
+      <form onSubmit={sendMessage}>
+        <input value={formValue} onChange={(e) => setFormValue(e.target.value)} placeholder="say something nice" />
+        <button type="submit" disabled={!formValue}>🕊️</button>
+      </form>
+    </>
+  );
 }
-
 
 function ChatMessage(props) {
   const { text, uid, photoURL } = props.message;
 
   const messageClass = uid === auth.currentUser.uid ? 'sent' : 'received';
 
-  return (<>
+  return (
     <div className={`message ${messageClass}`}>
       <img alt="alt" src={photoURL || 'https://api.adorable.io/avatars/23/abott@adorable.png'} />
       <p>{text}</p>
     </div>
-  </>)
+  );
 }
-
 
 export default App;
