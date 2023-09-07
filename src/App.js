@@ -36,7 +36,7 @@ function App() {
   return (
     <div className="App">
       <header>
-        <h1>⚛️🔥💬</h1>
+        <h1>🍀</h1>
         <SignOut />
       </header>
 
@@ -56,14 +56,15 @@ function SignIn() {
   return (
     <>
       <button className="sign-in" onClick={signInWithGoogle}>Sign in with Google</button>
-      <p>Do not violate the community guidelines or you will be banned for life!</p>
+      <p className='login-text'>Satıcınızla iletişime geçmek için Google ile giriş yapın.</p>
     </>
   )
 }
 
 function SignOut() {
   return auth.currentUser && (
-    <button className="sign-out" onClick={() => signOut(auth)}>Sign Out</button>
+    <button className="sign-out" onClick={() => signOut(auth)}><img src='exit.png' alt='alt'/></button>
+    
   )
 }
 
@@ -99,8 +100,8 @@ function ChatRoom() {
         <span ref={dummy}></span>
       </main>
       <form onSubmit={sendMessage}>
-        <input value={formValue} onChange={(e) => setFormValue(e.target.value)} placeholder="say something nice" />
-        <button type="submit" disabled={!formValue}>🕊️</button>
+        <input value={formValue} onChange={(e) => setFormValue(e.target.value)} placeholder="Bir mesaj yazın" />
+        <button type="submit" disabled={!formValue}><img src='right-arrow.png' alt='alt'/></button>
       </form>
     </>
   );
